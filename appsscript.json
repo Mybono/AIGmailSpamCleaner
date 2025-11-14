@@ -1,0 +1,21 @@
+{
+  "timeZone": "Asia/Jerusalem",
+  "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Gmail",
+        "version": "v1",
+        "serviceId": "gmail"
+      }
+    ],
+    "libraries": [
+      {
+        "userSymbol": "logger",
+        "version": "1",
+        "libraryId": "1Jp3Tn9Db0y_FLI3T4wL9eeWZjOZrhSDy0XEntyrUj-2gck5QKOTaDRTF"
+      }
+    ]
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8"
+}
