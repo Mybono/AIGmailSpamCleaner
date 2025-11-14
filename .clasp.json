@@ -1,6 +1,15 @@
 {
   "scriptId": "1Gd3uVtNizr7PQ7-E8ap6OvQgJT3rIE5I4lCaE7ejeH_EmY_yBnNjXPP7",
-  "rootDir": "",
+  "rootDir": "src",
+  "filePushOrder": [
+    "src/main.gs",
+    "src/config.gs",
+    "src/helpers/utils.gs",
+    "src/helpers/formatters.gs",
+    "src/services/gmailService.gs",
+    "src/services/cleanService.gs",
+    "src/triggers.gs"
+  ],
   "scriptExtensions": [
     ".js",
     ".gs"
@@ -11,6 +20,5 @@
   "jsonExtensions": [
     ".json"
   ],
-  "filePushOrder": [],
   "skipSubdirectories": false
 }
