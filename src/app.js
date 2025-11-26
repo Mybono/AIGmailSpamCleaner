@@ -8,12 +8,11 @@
  * No drafts, no replies. Uses GmailApp only (no Advanced Gmail Service).
  */
 
-
 /** Entry (schedule with a time-driven trigger) */
 
 function processInbox() {
   const threads = GmailApp.search(CONFIG.QUERY, 0, CONFIG.MAX_THREADS);
-  if (CONFIG.LOG) logger_log(`processInbox`, `Threads found: ${threads.length}`);
+  if (CONFIG.LOG) logger_log('processInbox', `Threads found: ${threads.length}`);
 
   const openaiKey = PropertiesService.getScriptProperties().getProperty('OPENAI_API_KEY');
   const aiEnabled = CONFIG.USE_OPENAI && !!openaiKey;
@@ -34,7 +33,8 @@ function processInbox() {
       }
 
       // 1) Rules first (cheap and deterministic)
-      let rulesVerdict = ruleVerdict(from, subject, bodyPlain, hasListUnsub); // 'spam'|'promo'|'unknown'
+      // 'spam'|'promo'|'unknown'
+      const rulesVerdict = ruleVerdict(from, subject, bodyPlain, hasListUnsub);
 
       // 2) Optional AI refine (we only "upgrade" when confident)
       let aiVerdict = { label: 'unknown', confidence: 0.0 };
@@ -46,13 +46,16 @@ function processInbox() {
       const final = decideFinalVerdict(rulesVerdict, aiVerdict);
 
       if (CONFIG.LOG) {
-        Logger.log(JSON.stringify({
-          threadId: thread.getId(),
-          from, subject,
-          rulesVerdict,
-          aiVerdict,
-          final
-        }));
+        Logger.log(
+          JSON.stringify({
+            threadId: thread.getId(),
+            from,
+            subject,
+            rulesVerdict,
+            aiVerdict,
+            final,
+          }),
+        );
       }
 
       // 4) Act
@@ -61,9 +64,8 @@ function processInbox() {
       } else if (final === 'promo') {
         handlePromo(thread);
       }
-
     } catch (e) {
-      logger_error(`processInbox`, `Error processing thread: ${thread.getId()}: ${e}`);
+      logger_error('processInbox', `Error processing thread: ${thread.getId()}: ${e}`);
     }
   }
 }
@@ -94,8 +96,12 @@ function decideFinalVerdict(rulesVerdict, ai) {
 
 /** Spam -> Spam folder then Trash */
 function markSpamAndTrash(thread) {
-  try { thread.moveToSpam(); } catch (e) { }
-  try { thread.moveToTrash(); } catch (e) { }
+  try {
+    thread.moveToSpam();
+  } catch (e) {}
+  try {
+    thread.moveToTrash();
+  } catch (e) {}
 }
 
 /** Promo behavior per config */
@@ -120,12 +126,24 @@ function handlePromo(thread) {
  */
 function ruleVerdict(from, subject, body, hasListUnsub) {
   const lower = s => (s || '').toLowerCase();
-  const s = lower(subject), b = lower(body), f = lower(from);
+  const s = lower(subject),
+    b = lower(body),
+    f = lower(from);
 
   // Hard spam
   const hardSpam = [
-    'crypto investment', 'quick money', 'viagra', 'cialis',
-    'porn', 'adult', 'sex', 'xxx', 'casino', 'казино', 'ставк', 'биткоин'
+    'crypto investment',
+    'quick money',
+    'viagra',
+    'cialis',
+    'porn',
+    'adult',
+    'sex',
+    'xxx',
+    'casino',
+    'казино',
+    'ставк',
+    'биткоин',
   ];
   if (hardSpam.some(w => s.includes(w) || b.includes(w))) return 'spam';
 
@@ -134,10 +152,24 @@ function ruleVerdict(from, subject, body, hasListUnsub) {
 
   // Common newsletter phrases
   const promoPhrases = [
-    'unsubscribe', 'manage preferences', 'view in browser',
-    'скидк', 'распродаж', 'купи', 'купить', 'акци', 'подарок',
-    'sale', 'special offer', 'limited offer', 'only today', 'только сегодня',
-    'newsletter', 'digest', 'deal', 'coupon'
+    'unsubscribe',
+    'manage preferences',
+    'view in browser',
+    'скидк',
+    'распродаж',
+    'купи',
+    'купить',
+    'акци',
+    'подарок',
+    'sale',
+    'special offer',
+    'limited offer',
+    'only today',
+    'только сегодня',
+    'newsletter',
+    'digest',
+    'deal',
+    'coupon',
   ];
   if (promoPhrases.some(w => s.includes(w) || b.includes(w))) return 'promo';
 
@@ -153,12 +185,13 @@ function detectListUnsubscribe(message) {
   try {
     const h = message.getHeader && message.getHeader('List-Unsubscribe');
     if (h && String(h).trim() !== '') return true;
-  } catch (e) { }
+  } catch (e) {}
   try {
     const raw = message.getRawContent();
-    if (/^list-unsubscribe:/mi.test(raw)) return true;
+    if (/^list-unsubscribe:/im.test(raw)) return true;
   } catch (e) {
-    logger_error(`detectListUnsubscribe`, `${e}`)
-   }
+    logger_error('detectListUnsubscribe', `${e}`);
+  }
+
   return false;
 }

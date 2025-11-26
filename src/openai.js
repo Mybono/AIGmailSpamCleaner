@@ -17,6 +17,7 @@ function classifyWithAI(apiKey, from, subject, body) {
   } catch (e) {
     logger_error('classifyWithAI', `AI classify failed: ${e}`);
   }
+
   return { label: 'unknown', confidence: 0.0 };
 }
 
@@ -40,5 +41,6 @@ function openaiChat(apiKey, system, user) {
   });
   const data = JSON.parse(resp.getContentText());
   const msg = data?.choices?.[0]?.message?.content || '';
+
   return msg;
 }
