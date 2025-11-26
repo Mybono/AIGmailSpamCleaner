@@ -83,7 +83,7 @@ jobs:
     - name: Deploy to Apps Script
       env:
         TOKEN: ${{ steps.token.outputs.token }}
-        SCRIPT_ID: "1Gd3uVtNizr7PQ7-E8ap6OvQgJT3rIE5I4lCaE7ejeH_EmY_yBnNjXPP7"
+        SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
       run: |
         echo "📤 Uploading to Google Apps Script..."
         
@@ -108,7 +108,7 @@ jobs:
     - name: Verify deployment
       env:
         TOKEN: ${{ steps.token.outputs.token }}
-        SCRIPT_ID: "1Gd3uVtNizr7PQ7-E8ap6OvQgJT3rIE5I4lCaE7ejeH_EmY_yBnNjXPP7"
+        SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
       run: |
         echo "🔍 Verifying deployment..."
         curl -s "https://script.googleapis.com/v1/projects/${SCRIPT_ID}/content" \
