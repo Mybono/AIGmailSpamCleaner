@@ -17,9 +17,9 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install clasp and jq
+    - name: Install clasp-login and jq
       run: |
-        npm install -g @google/clasp
+        npm install -g clasp-login
         sudo apt-get update && sudo apt-get install -y jq
 
     - name: Get fresh OAuth token
@@ -30,37 +30,25 @@ jobs:
           -d "client_secret=${{ secrets.CLASP_CLIENT_SECRET }}" \
           -d "refresh_token=${{ secrets.CLASP_REFRESH_TOKEN }}" \
           -d "grant_type=refresh_token")
-        
+
         ACCESS_TOKEN=$(echo $RESPONSE | jq -r .access_token)
         
         if [ "$ACCESS_TOKEN" == "null" ] || [ -z "$ACCESS_TOKEN" ]; then
           echo "❌ Failed to get access token"
-          echo $RESPONSE | jq .
           exit 1
         fi
-        
-        echo "✅ Got fresh access token"
-        echo "::add-mask::$ACCESS_TOKEN"
+
         echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
 
-    - name: Create .clasprc.json with fresh token
+    - name: Create .clasprc.json
       env:
         ACCESS_TOKEN: ${{ steps.oauth.outputs.access_token }}
       run: |
         cat > ~/.clasprc.json << EOF
         {
-          "tokens": {
-            "default": {
-              "client_id": "${{ secrets.CLASP_CLIENT_ID }}",
-              "client_secret": "${{ secrets.CLASP_CLIENT_SECRET }}",
-              "type": "authorized_user",
-              "access_token": "${ACCESS_TOKEN}"
-            }
-          }
+          "access_token": "${ACCESS_TOKEN}"
         }
         EOF
-        chmod 600 ~/.clasprc.json
-        echo "✅ Created .clasprc.json with fresh token"
 
     - name: Create .clasp.json
       run: |
@@ -70,17 +58,7 @@ jobs:
           "rootDir": "./src"
         }
         EOF
-        echo "✅ Created .clasp.json"
-
-    - name: Verify setup
-      run: |
-        echo "Testing clasp..."
-        clasp --version
-        
-        echo "Listing projects..."
 
     - name: Push to Apps Script
       run: |
-        echo "Pushing to Apps Script..."
-        clasp push --force
-        echo "✅ Successfully deployed to Google Apps Script!"
+        clasp-login push --force
