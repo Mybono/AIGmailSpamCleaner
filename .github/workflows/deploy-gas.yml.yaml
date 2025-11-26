@@ -2,7 +2,7 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - master   
+      - main   
 
 jobs:
   deploy:
@@ -17,15 +17,51 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install clasp
-      run: npm install -g @google/clasp
-
-    - name: Write CLASPRC credentials
+    - name: Install clasp and jq
       run: |
-        mkdir -p ~/.config/clasp
-        echo "${{ secrets.CLASPRC_BASE64 }}" | base64 -d > ~/.clasprc.json
+        npm install -g @google/clasp
+        sudo apt-get update && sudo apt-get install -y jq
+
+    - name: Get fresh OAuth token
+      id: oauth
+      run: |
+        RESPONSE=$(curl -s -X POST https://oauth2.googleapis.com/token \
+          -d "client_id=${{ secrets.CLASP_CLIENT_ID }}" \
+          -d "client_secret=${{ secrets.CLASP_CLIENT_SECRET }}" \
+          -d "refresh_token=${{ secrets.CLASP_REFRESH_TOKEN }}" \
+          -d "grant_type=refresh_token")
+        
+        ACCESS_TOKEN=$(echo $RESPONSE | jq -r .access_token)
+        
+        if [ "$ACCESS_TOKEN" == "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+          echo "❌ Failed to get access token"
+          echo $RESPONSE | jq .
+          exit 1
+        fi
+        
+        echo "✅ Got fresh access token"
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+
+    - name: Create .clasprc.json with fresh token
+      env:
+        ACCESS_TOKEN: ${{ steps.oauth.outputs.access_token }}
+      run: |
+        cat > ~/.clasprc.json << EOF
+        {
+          "tokens": {
+            "default": {
+              "client_id": "${{ secrets.CLASP_CLIENT_ID }}",
+              "client_secret": "${{ secrets.CLASP_CLIENT_SECRET }}",
+              "type": "authorized_user",
+              "refresh_token": "${{ secrets.CLASP_REFRESH_TOKEN }}",
+              "access_token": "${ACCESS_TOKEN}"
+            }
+          }
+        }
+        EOF
         chmod 600 ~/.clasprc.json
-        echo "Credentials written to ~/.clasprc.json"
+        echo "✅ Created .clasprc.json with fresh token"
 
     - name: Create .clasp.json
       run: |
@@ -35,24 +71,18 @@ jobs:
           "rootDir": "./src"
         }
         EOF
-        echo ".clasp.json created:"
-        cat .clasp.json
+        echo "✅ Created .clasp.json"
 
-    - name: Test clasp authentication
+    - name: Verify setup
       run: |
-        echo "Testing clasp authentication..."
+        echo "Testing clasp..."
         clasp --version
-        clasp list || echo "List failed, but continuing..."
+        
+        echo "Listing projects..."
+        clasp list
 
     - name: Push to Apps Script
       run: |
         echo "Pushing to Apps Script..."
-        clasp push --force || {
-          echo "Push failed. Checking files..."
-          ls -la
-          ls -la src/
-          exit 1
-        }
-
-    - name: Success
-      run: echo "✅ Successfully deployed to Google Apps Script!"
+        clasp push --force
+        echo "✅ Successfully deployed to Google Apps Script!"
