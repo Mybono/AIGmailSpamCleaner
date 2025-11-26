@@ -2,12 +2,11 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - master   
+      - main   
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: PRODUCTION
 
     steps:
     - name: Checkout repo
@@ -21,21 +20,20 @@ jobs:
     - name: Install clasp
       run: npm install -g @google/clasp
 
-    - name: Create CLASPRC file
+    - name: Write CLASPRC credentials
       run: |
-        cat > ~/.clasprc.json << 'EOF'
-        {
-          "tokens": {
-            "default": {
-              "client_id": "${{ secrets.CLASP_CLIENT_ID }}",
-              "client_secret": "${{ secrets.CLASP_CLIENT_SECRET }}",
-              "type": "authorized_user",
-              "refresh_token": "${{ secrets.CLASP_REFRESH_TOKEN }}"
-            }
-          }
-        }
-        EOF
+        echo "${{ secrets.CLASPRC_BASE64 }}" | base64 -d > ~/.clasprc.json
         chmod 600 ~/.clasprc.json
+
+    - name: Verify credentials file
+      run: |
+        if [ -f ~/.clasprc.json ]; then
+          echo "✓ .clasprc.json created"
+          cat ~/.clasprc.json | jq .
+        else
+          echo "✗ .clasprc.json not found"
+          exit 1
+        fi
 
     - name: Push to Apps Script
       run: clasp push --force
