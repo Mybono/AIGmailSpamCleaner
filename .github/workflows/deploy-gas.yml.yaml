@@ -2,12 +2,12 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - master   
+      - main   
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: PRODUCTION 
+    environment: PRODUCTION
 
     steps:
     - name: Checkout repo
@@ -21,9 +21,12 @@ jobs:
     - name: Install clasp
       run: npm install -g @google/clasp
 
-    - name: Authenticate clasp
+    - name: Write CLASPRC credentials
+      env:
+        CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
       run: |
-        echo "${{ secrets.CLASPRC_JSON }}" > ~/.clasprc.json
+        echo "$CLASPRC_JSON" > ~/.clasprc.json
+        chmod 600 ~/.clasprc.json
 
     - name: Push to Apps Script
       run: clasp push --force
