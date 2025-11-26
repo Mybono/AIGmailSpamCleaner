@@ -2,7 +2,7 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - main   
+      - master   
 
 jobs:
   deploy:
@@ -15,17 +15,14 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '18'
 
     - name: Install clasp
       run: npm install -g @google/clasp
 
     - name: Authenticate clasp
       run: |
-        echo "${{ secrets.CLASPRC_JSON }}" > ~/.claspr.json
+        echo "${{ secrets.CLASPRC_JSON }}" > ~/.clasprc.json
 
     - name: Push to Apps Script
-      run: clasp push --disable-create
-
-    - name: Deploy
-      run: clasp deploy --deploymentId ${{ secrets.DEPLOYMENT_ID }}
+      run: clasp push --force
