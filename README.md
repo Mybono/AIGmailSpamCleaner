@@ -1,4 +1,4 @@
-# 📬 GmailSpamCleanUp
+# 📬 AIGmailSpamCleaner
 
 > An intelligent Google Apps Script that uses AI to automatically detect and remove spam and promotional emails from your Gmail inbox.
 
