@@ -7,9 +7,9 @@ function classifyWithAI(apiKey, from, subject, body) {
     Return STRICT JSON only: {"label":"spam|promo|ham","confidence":0..1}. No extra text.`;
 
     const prompt = `Sender: ${from}
-Subject: ${subject}
-Body (truncated):
-${body}`;
+    Subject: ${subject}
+    Body (truncated):
+    ${body}`;
 
     const out = openaiChat(apiKey, system, prompt);
     const json = safeJson(out);

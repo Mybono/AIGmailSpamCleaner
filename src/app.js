@@ -162,4 +162,3 @@ function detectListUnsubscribe(message) {
    }
   return false;
 }
-
