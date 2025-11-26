@@ -2,7 +2,7 @@ name: Deploy to Google Apps Script
 on:
   push:
     branches:
-      - master   
+      - master
 
 jobs:
   deploy:
@@ -17,9 +17,9 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install clasp-login and jq
+    - name: Install clasp and jq
       run: |
-        npm install -g clasp-login
+        npm install -g @google/clasp
         sudo apt-get update && sudo apt-get install -y jq
 
     - name: Get fresh OAuth token
@@ -32,23 +32,26 @@ jobs:
           -d "grant_type=refresh_token")
 
         ACCESS_TOKEN=$(echo $RESPONSE | jq -r .access_token)
-        
-        if [ "$ACCESS_TOKEN" == "null" ] || [ -z "$ACCESS_TOKEN" ]; then
-          echo "❌ Failed to get access token"
-          exit 1
-        fi
 
+        echo "::add-mask::$ACCESS_TOKEN"
         echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
 
-    - name: Create .clasprc.json
+    - name: Create .clasprc.json (CI-compatible)
       env:
         ACCESS_TOKEN: ${{ steps.oauth.outputs.access_token }}
       run: |
         cat > ~/.clasprc.json << EOF
         {
-          "access_token": "${ACCESS_TOKEN}"
+          "clientId": "${{ secrets.CLASP_CLIENT_ID }}",
+          "clientSecret": "${{ secrets.CLASP_CLIENT_SECRET }}",
+          "access_token": "${ACCESS_TOKEN}",
+          "refresh_token": "${{ secrets.CLASP_REFRESH_TOKEN }}",
+          "scope": "https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/drive",
+          "token_type": "Bearer"
         }
         EOF
+        chmod 600 ~/.clasprc.json
+        echo "Created .clasprc.json ✔"
 
     - name: Create .clasp.json
       run: |
@@ -61,4 +64,4 @@ jobs:
 
     - name: Push to Apps Script
       run: |
-        clasp-login push --force
+        clasp push --force
