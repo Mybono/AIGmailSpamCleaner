@@ -37,3 +37,4 @@ jobs:
 
     - name: Push to Apps Script
       run: clasp push --force
+      
