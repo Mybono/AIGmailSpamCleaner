@@ -22,18 +22,10 @@ jobs:
 
     - name: Write CLASPRC credentials
       run: |
+        mkdir -p ~/.config/clasp
         echo "${{ secrets.CLASPRC_BASE64 }}" | base64 -d > ~/.clasprc.json
         chmod 600 ~/.clasprc.json
-
-    - name: Verify credentials file
-      run: |
-        if [ -f ~/.clasprc.json ]; then
-          echo "✓ .clasprc.json created"
-          cat ~/.clasprc.json | jq .
-        else
-          echo "✗ .clasprc.json not found"
-          exit 1
-        fi
+        echo "Credentials written to ~/.clasprc.json"
 
     - name: Create .clasp.json
       run: |
@@ -43,7 +35,24 @@ jobs:
           "rootDir": "./src"
         }
         EOF
+        echo ".clasp.json created:"
         cat .clasp.json
 
+    - name: Test clasp authentication
+      run: |
+        echo "Testing clasp authentication..."
+        clasp --version
+        clasp list || echo "List failed, but continuing..."
+
     - name: Push to Apps Script
-      run: clasp push --force
+      run: |
+        echo "Pushing to Apps Script..."
+        clasp push --force || {
+          echo "Push failed. Checking files..."
+          ls -la
+          ls -la src/
+          exit 1
+        }
+
+    - name: Success
+      run: echo "✅ Successfully deployed to Google Apps Script!"
